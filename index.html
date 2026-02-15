@@ -512,19 +512,20 @@
             <!-- 顧客リスト -->
             <div class="list-section">
                 <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="🔍 お客様名で検索...">
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="searchInput" placeholder="🔍 お客様名で検索...">
+                        <div id="searchNameDropdown" class="name-dropdown"></div>
+                    </div>
                     <button onclick="searchCustomers()">検索</button>
                 </div>
                 <div id="customerList" class="customer-grid">
                     <div class="empty-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
                         </svg>
-                        <h3>まだお客様が登録されていません</h3>
-                        <p>左のフォームから新しいお客様を登録してください</p>
+                        <h3>検索してお客様を表示</h3>
+                        <p>上の検索欄からお客様を検索してください</p>
                     </div>
                 </div>
             </div>
@@ -540,7 +541,6 @@
             const stored = localStorage.getItem('eyelashCustomers');
             if (stored) {
                 customers = JSON.parse(stored);
-                renderCustomers();
             }
         }
 
@@ -555,7 +555,7 @@
             return uniqueNames;
         }
         
-        // 名前ドロップダウンの表示
+        // 名前ドロップダウンの表示（入力欄）
         document.getElementById('customerName').addEventListener('input', function(e) {
             const dropdown = document.getElementById('customerNameDropdown');
             const inputValue = e.target.value;
@@ -581,19 +581,57 @@
             }
         });
         
-        // 名前ドロップダウンを閉じる
-        document.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('customerNameDropdown');
-            const input = document.getElementById('customerName');
-            if (e.target !== input && !dropdown.contains(e.target)) {
+        // 名前ドロップダウンの表示（検索欄）
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const dropdown = document.getElementById('searchNameDropdown');
+            const inputValue = e.target.value;
+            const uniqueNames = updateCustomerNameList();
+            
+            // 1文字以上入力されている場合のみ表示
+            if (inputValue.length >= 1 && uniqueNames.length > 0) {
+                // 入力された文字を含む名前をフィルタリング
+                const filteredNames = uniqueNames.filter(name => 
+                    name.toLowerCase().includes(inputValue.toLowerCase())
+                );
+                
+                if (filteredNames.length > 0) {
+                    dropdown.innerHTML = filteredNames.map(name => 
+                        `<div class="name-dropdown-item" onclick="selectSearchName('${name}')">${name}</div>`
+                    ).join('');
+                    dropdown.classList.add('show');
+                } else {
+                    dropdown.classList.remove('show');
+                }
+            } else {
                 dropdown.classList.remove('show');
             }
         });
         
-        // 名前を選択
+        // 名前ドロップダウンを閉じる
+        document.addEventListener('click', function(e) {
+            const dropdown1 = document.getElementById('customerNameDropdown');
+            const dropdown2 = document.getElementById('searchNameDropdown');
+            const input1 = document.getElementById('customerName');
+            const input2 = document.getElementById('searchInput');
+            
+            if (e.target !== input1 && !dropdown1.contains(e.target)) {
+                dropdown1.classList.remove('show');
+            }
+            if (e.target !== input2 && !dropdown2.contains(e.target)) {
+                dropdown2.classList.remove('show');
+            }
+        });
+        
+        // 名前を選択（入力欄）
         function selectCustomerName(name) {
             document.getElementById('customerName').value = name;
             document.getElementById('customerNameDropdown').classList.remove('show');
+        }
+        
+        // 名前を選択（検索欄）
+        function selectSearchName(name) {
+            document.getElementById('searchInput').value = name;
+            document.getElementById('searchNameDropdown').classList.remove('show');
         }
 
         // 今日の日付を設定
@@ -782,6 +820,7 @@
         // 検索機能
         function searchCustomers() {
             const searchValue = document.getElementById('searchInput').value;
+            document.getElementById('searchNameDropdown').classList.remove('show');
             renderCustomers(searchValue);
         }
         
