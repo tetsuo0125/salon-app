@@ -316,10 +316,10 @@
         
         .photo-preview {
             margin-top: 16px;
-            max-width: 100%;
+            width: 100%;
             max-height: 220px;
             border-radius: 12px;
-            object-fit: contain;
+            object-fit: cover;
             display: none;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
@@ -556,15 +556,28 @@
         }
         
         // 名前ドロップダウンの表示
-        document.getElementById('customerName').addEventListener('focus', function() {
+        document.getElementById('customerName').addEventListener('input', function(e) {
             const dropdown = document.getElementById('customerNameDropdown');
+            const inputValue = e.target.value;
             const uniqueNames = updateCustomerNameList();
             
-            if (uniqueNames.length > 0) {
-                dropdown.innerHTML = uniqueNames.map(name => 
-                    `<div class="name-dropdown-item" onclick="selectCustomerName('${name}')">${name}</div>`
-                ).join('');
-                dropdown.classList.add('show');
+            // 1文字以上入力されている場合のみ表示
+            if (inputValue.length >= 1 && uniqueNames.length > 0) {
+                // 入力された文字を含む名前をフィルタリング
+                const filteredNames = uniqueNames.filter(name => 
+                    name.toLowerCase().includes(inputValue.toLowerCase())
+                );
+                
+                if (filteredNames.length > 0) {
+                    dropdown.innerHTML = filteredNames.map(name => 
+                        `<div class="name-dropdown-item" onclick="selectCustomerName('${name}')">${name}</div>`
+                    ).join('');
+                    dropdown.classList.add('show');
+                } else {
+                    dropdown.classList.remove('show');
+                }
+            } else {
+                dropdown.classList.remove('show');
             }
         });
         
