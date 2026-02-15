@@ -129,6 +129,45 @@
             resize: vertical;
             min-height: 100px;
         }
+        
+        .name-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #5e72e4;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .name-dropdown.show {
+            display: block;
+        }
+        
+        .name-dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        
+        .name-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .name-dropdown-item:hover {
+            background: #f0f4ff;
+        }
+        
+        .name-dropdown-item:active {
+            background: #e0e8ff;
+        }
 
         .photo-upload {
             border: 2px dashed #cbd5e0;
@@ -434,8 +473,10 @@
                     
                     <div class="form-group">
                         <label for="customerName">お客様名 *</label>
-                        <input type="text" id="customerName" list="customerNameList" placeholder="山田 花子" required autocomplete="off">
-                        <datalist id="customerNameList"></datalist>
+                        <div style="position: relative;">
+                            <input type="text" id="customerName" placeholder="山田 花子" required>
+                            <div id="customerNameDropdown" class="name-dropdown"></div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -500,21 +541,46 @@
             if (stored) {
                 customers = JSON.parse(stored);
                 renderCustomers();
-                updateCustomerNameList();
             }
         }
 
         // ローカルストレージに保存
         function saveCustomers() {
             localStorage.setItem('eyelashCustomers', JSON.stringify(customers));
-            updateCustomerNameList();
         }
         
         // 顧客名のリストを更新
         function updateCustomerNameList() {
-            const datalist = document.getElementById('customerNameList');
             const uniqueNames = [...new Set(customers.map(c => c.name))];
-            datalist.innerHTML = uniqueNames.map(name => `<option value="${name}">`).join('');
+            return uniqueNames;
+        }
+        
+        // 名前ドロップダウンの表示
+        document.getElementById('customerName').addEventListener('focus', function() {
+            const dropdown = document.getElementById('customerNameDropdown');
+            const uniqueNames = updateCustomerNameList();
+            
+            if (uniqueNames.length > 0) {
+                dropdown.innerHTML = uniqueNames.map(name => 
+                    `<div class="name-dropdown-item" onclick="selectCustomerName('${name}')">${name}</div>`
+                ).join('');
+                dropdown.classList.add('show');
+            }
+        });
+        
+        // 名前ドロップダウンを閉じる
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('customerNameDropdown');
+            const input = document.getElementById('customerName');
+            if (e.target !== input && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        // 名前を選択
+        function selectCustomerName(name) {
+            document.getElementById('customerName').value = name;
+            document.getElementById('customerNameDropdown').classList.remove('show');
         }
 
         // 今日の日付を設定
@@ -705,10 +771,6 @@
             const searchValue = document.getElementById('searchInput').value;
             renderCustomers(searchValue);
         }
-        
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            renderCustomers(e.target.value);
-        });
         
         // Enterキーで検索
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
