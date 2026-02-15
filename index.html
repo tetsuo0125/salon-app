@@ -172,11 +172,26 @@
         .photo-upload {
             border: 2px dashed #cbd5e0;
             border-radius: 12px;
-            padding: 30px 20px;
+            padding: 20px 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
             background: #f8f9fa;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .photo-uploads {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .photo-upload-item {
+            position: relative;
         }
 
         .photo-upload:hover {
@@ -190,7 +205,17 @@
 
         .photo-upload div {
             color: #6c757d;
-            font-size: 0.95em;
+            font-size: 0.85em;
+        }
+        
+        .photo-preview {
+            margin-top: 8px;
+            width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            object-fit: cover;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .button-group {
@@ -312,6 +337,21 @@
             border-radius: 10px;
             margin-bottom: 16px;
             background: #f8f9fa;
+        }
+        
+        .customer-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .customer-photos img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 0;
         }
         
         .photo-preview {
@@ -454,6 +494,11 @@
             .customer-card img {
                 height: 180px;
             }
+            
+            .photo-uploads {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -485,11 +530,29 @@
                     </div>
 
                     <div class="form-group">
-                        <label>お客様写真</label>
-                        <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
-                            <input type="file" id="photoInput" accept="image/*" capture="environment">
-                            <div>📷 写真を撮影 / アップロード</div>
-                            <img id="photoPreview" class="photo-preview" alt="プレビュー">
+                        <label>お客様写真（最大3枚）</label>
+                        <div class="photo-uploads">
+                            <div class="photo-upload-item">
+                                <div class="photo-upload" onclick="document.getElementById('photoInput1').click()">
+                                    <input type="file" id="photoInput1" accept="image/*">
+                                    <div>📷 写真1</div>
+                                    <img id="photoPreview1" class="photo-preview" alt="プレビュー1">
+                                </div>
+                            </div>
+                            <div class="photo-upload-item">
+                                <div class="photo-upload" onclick="document.getElementById('photoInput2').click()">
+                                    <input type="file" id="photoInput2" accept="image/*">
+                                    <div>📷 写真2</div>
+                                    <img id="photoPreview2" class="photo-preview" alt="プレビュー2">
+                                </div>
+                            </div>
+                            <div class="photo-upload-item">
+                                <div class="photo-upload" onclick="document.getElementById('photoInput3').click()">
+                                    <input type="file" id="photoInput3" accept="image/*">
+                                    <div>📷 写真3</div>
+                                    <img id="photoPreview3" class="photo-preview" alt="プレビュー3">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -637,9 +700,9 @@
         // 今日の日付を設定
         document.getElementById('visitDate').valueAsDate = new Date();
 
-        // 写真プレビュー
-        document.getElementById('photoInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
+        // 写真プレビュー（共通関数）
+        function handlePhotoUpload(input, previewId) {
+            const file = input.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -673,7 +736,7 @@
                         
                         // 圧縮して表示
                         const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
-                        const preview = document.getElementById('photoPreview');
+                        const preview = document.getElementById(previewId);
                         preview.src = resizedImage;
                         preview.style.display = 'block';
                     };
@@ -681,6 +744,21 @@
                 };
                 reader.readAsDataURL(file);
             }
+        }
+
+        // 写真プレビュー（写真1）
+        document.getElementById('photoInput1').addEventListener('change', function(e) {
+            handlePhotoUpload(e.target, 'photoPreview1');
+        });
+
+        // 写真プレビュー（写真2）
+        document.getElementById('photoInput2').addEventListener('change', function(e) {
+            handlePhotoUpload(e.target, 'photoPreview2');
+        });
+
+        // 写真プレビュー（写真3）
+        document.getElementById('photoInput3').addEventListener('change', function(e) {
+            handlePhotoUpload(e.target, 'photoPreview3');
         });
 
         // フォーム送信
@@ -691,14 +769,22 @@
             const date = document.getElementById('visitDate').value;
             const notes = document.getElementById('customerNotes').value;
             const editId = document.getElementById('editId').value;
-            const previewSrc = document.getElementById('photoPreview').src;
+            
+            // 3枚の写真を取得
+            const photos = [];
+            for (let i = 1; i <= 3; i++) {
+                const previewSrc = document.getElementById('photoPreview' + i).src;
+                if (previewSrc && !previewSrc.includes('data:image/svg+xml')) {
+                    photos.push(previewSrc);
+                }
+            }
             
             const customer = {
                 id: editId || Date.now().toString(),
                 name: name,
                 date: date,
                 notes: notes,
-                photo: (previewSrc && !previewSrc.includes('data:image/svg+xml')) ? previewSrc : null,
+                photos: photos,
                 createdAt: editId ? customers.find(c => c.id === editId).createdAt : new Date().toISOString()
             };
 
@@ -726,8 +812,13 @@
         function resetForm() {
             document.getElementById('customerForm').reset();
             document.getElementById('editId').value = '';
-            document.getElementById('photoPreview').style.display = 'none';
-            document.getElementById('photoPreview').src = '';
+            
+            // 3枚の写真プレビューをリセット
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById('photoPreview' + i).style.display = 'none';
+                document.getElementById('photoPreview' + i).src = '';
+            }
+            
             document.getElementById('visitDate').valueAsDate = new Date();
             document.getElementById('formTitle').textContent = '新規お客様登録';
             document.getElementById('submitText').textContent = '登録する';
@@ -745,9 +836,15 @@
             document.getElementById('visitDate').value = customer.date;
             document.getElementById('customerNotes').value = customer.notes;
             
-            if (customer.photo) {
-                document.getElementById('photoPreview').src = customer.photo;
-                document.getElementById('photoPreview').style.display = 'block';
+            // 写真を読み込み
+            if (customer.photos && customer.photos.length > 0) {
+                customer.photos.forEach((photo, index) => {
+                    if (index < 3) {
+                        const preview = document.getElementById('photoPreview' + (index + 1));
+                        preview.src = photo;
+                        preview.style.display = 'block';
+                    }
+                });
             }
 
             document.getElementById('formTitle').textContent = 'お客様情報編集';
@@ -796,8 +893,10 @@
 
             listDiv.innerHTML = filteredCustomers.map(customer => `
                 <div class="customer-card">
-                    ${customer.photo ? 
-                        `<img src="${customer.photo}" alt="${customer.name}">` : 
+                    ${customer.photos && customer.photos.length > 0 ? 
+                        `<div class="customer-photos">
+                            ${customer.photos.map(photo => `<img src="${photo}" alt="${customer.name}">`).join('')}
+                        </div>` : 
                         `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23e8edf2' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='60' fill='%236c757d'%3E👤%3C/text%3E%3C/svg%3E" alt="No photo">`
                     }
                     <h3>${customer.name}</h3>
